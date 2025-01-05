@@ -2,8 +2,7 @@ FROM node:alpine
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install -g @nestjs/cli
-RUN npm install -g prisma
+RUN npm install -g @nestjs/cli prisma
 RUN npm install --omit=dev
 COPY . .
 EXPOSE 3000
