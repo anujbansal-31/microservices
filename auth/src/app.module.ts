@@ -11,7 +11,18 @@ import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+
+      ...(process.env.NODE_ENV === 'test'
+        ? {
+            envFilePath: ['.env.test.local'],
+            ignoreEnvFile: false,
+          }
+        : {
+            ignoreEnvFile: process.env.NODE_ENV === 'development',
+          }),
+    }),
     JwtModule.register({}),
     PrismaModule,
   ],
