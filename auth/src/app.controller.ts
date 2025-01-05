@@ -100,4 +100,10 @@ export class AppController {
   health(): Health {
     return this.appService.health();
   }
+
+  @Get()
+  getExample() {
+    const data = { exampleKey: 'exampleValue' };
+    return createResponse('success', 'Data fetched successfully', data);
+  }
 }
