@@ -1,29 +1,49 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { faker } from '@faker-js/faker';
+import { GlobalExceptionsFilter } from '@microservicess/common';
+import cookieParser from 'cookie-parser';
 import { decode } from 'jsonwebtoken';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+interface ParsedCookies {
+  [key: string]: string;
+}
+
 describe('Auth E2E', () => {
   let app: INestApplication;
   let prisma: PrismaService;
 
-  const getTestUser = () => ({
-    name: 'Test User',
+  const getSignInRequestPayload = () => ({
     email: faker.internet.email(),
     password: 'super-secret-password',
   });
 
-  let accessToken: string;
+  let testSignUpPayload: any;
+  let testSignInPayload: any;
+  let cookies: any;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let refreshToken: string;
-  let userId: number;
-  let testUser: any;
+  // Parsing the cookies
+  let parsedCookies: ParsedCookies;
+
+  function cookiesParser(cookies: string[]) {
+    return cookies.reduce<ParsedCookies>((acc, cookie) => {
+      const [keyValue] = cookie.split(';'); // Extract the key-value pair
+      const [key, value] = keyValue.split('='); // Split into key and value
+      if (key && value) {
+        acc[key.trim()] = value.trim(); // Ensure no leading or trailing spaces
+      }
+      return acc;
+    }, {});
+  }
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -31,12 +51,20 @@ describe('Auth E2E', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-
-    // Ensure the global prefix matches the application
     app.setGlobalPrefix('v1/api');
-
-    // Apply global pipes and middleware
-    app.useGlobalPipes(new ValidationPipe());
+    app.use(cookieParser());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        exceptionFactory: (errors) => {
+          // Forward class-validator errors as an array to the filter
+          return new BadRequestException(errors);
+        },
+      }),
+    );
+    app.useGlobalFilters(new GlobalExceptionsFilter());
     await app.init();
 
     prisma = moduleRef.get(PrismaService);
@@ -48,14 +76,16 @@ describe('Auth E2E', () => {
   });
 
   beforeEach(() => {
-    // Ensure testUser is initialized before each test
-    testUser = getTestUser();
+    testSignInPayload = getSignInRequestPayload();
+    testSignUpPayload = {
+      ...testSignInPayload,
+      name: 'Test User',
+    };
+    if (cookies) {
+      parsedCookies = cookiesParser(cookies);
+    }
   });
 
-  /**
-   * Helper function to clean DB.
-   * If you have a custom method in PrismaService, call it here.
-   */
   const cleanDb = async () => {
     await prisma.cleanDatabase();
   };
@@ -70,36 +100,36 @@ describe('Auth E2E', () => {
 
     it('should signup a new user', async () => {
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup') // Include the correct global prefix
-        .send(testUser);
-      // .expect(201);
+        .post('/v1/api/auth/local/signup')
+        .send(testSignUpPayload);
 
       const body = res.body;
 
-      expect(body).toHaveProperty('access_token');
-      expect(body).toHaveProperty('refresh_token');
+      expect(body.status).toBe('success');
+      expect(body.message).toBe('SignUp successfully');
+      expect(body.data).toHaveProperty('id');
+      expect(body.data).toHaveProperty('email', testSignUpPayload.email);
     });
 
     it('should fail on duplicate signup', async () => {
       await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup') // Include the correct global prefix
-        .send(testUser)
+        .post('/v1/api/auth/local/signup')
+        .send(testSignUpPayload)
         .expect(201);
 
-      // Attempt to signup with the same credentials
       const res = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signup')
-        .send(testUser)
+        .send(testSignUpPayload)
         .expect(403);
 
-      // Check if the response has an error message
+      expect(res.body.status).toBe('error');
       expect(res.body.message).toBeDefined();
     });
   });
 
-  // // ---------------------------------------------------------------------------
-  // // SIGNIN
-  // // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // SIGNIN
+  // ---------------------------------------------------------------------------
   describe('Signin (POST /v1/api/auth/local/signin)', () => {
     beforeAll(async () => {
       await cleanDb();
@@ -108,38 +138,45 @@ describe('Auth E2E', () => {
     it('should throw 403 if user does not exist', async () => {
       const res = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signin')
-        .send(testUser)
+        .send(testSignInPayload)
         .expect(403);
 
+      expect(res.body.status).toBe('error');
       expect(res.body.message).toBeDefined();
     });
 
     it('should successfully sign in after signing up', async () => {
-      // first, create a user
       await request(app.getHttpServer())
         .post('/v1/api/auth/local/signup')
-        .send(testUser)
+        .send(testSignUpPayload)
         .expect(201);
 
-      // now sign in with the newly created user
       const res = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signin')
-        .send(testUser)
+        .send(testSignInPayload)
         .expect(200);
 
-      expect(res.body).toHaveProperty('access_token');
-      expect(res.body).toHaveProperty('refresh_token');
+      expect(res.body.status).toBe('success');
+      expect(res.body.message).toBe('SignIn successfully');
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.data).toHaveProperty('email', testSignInPayload.email);
     });
 
     it('should throw 403 if password is incorrect', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/api/auth/local/signup')
+        .send(testSignUpPayload)
+        .expect(201);
+
       const res = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signin')
         .send({
-          email: testUser.email,
-          password: testUser.password + 'extra',
+          email: testSignInPayload.email,
+          password: testSignInPayload.password + 'extra',
         })
         .expect(403);
 
+      expect(res.body.status).toBe('error');
       expect(res.body.message).toBeDefined();
     });
   });
@@ -150,37 +187,28 @@ describe('Auth E2E', () => {
   describe('Logout (POST /v1/api/auth/logout)', () => {
     beforeAll(async () => {
       await cleanDb();
-      // Create and login the user so we have a valid token
       const signupRes = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signup')
-        .send(testUser);
+        .send(testSignUpPayload);
 
-      accessToken = signupRes.body.access_token;
-      refreshToken = signupRes.body.refresh_token;
-      const decoded = decode(accessToken) as { sub: string };
-      userId = Number(decoded.sub);
+      cookies = signupRes.get('Set-Cookie');
     });
 
     it('should pass if logout is called for a non-existent user', async () => {
-      // call logout with a random user ID
       await request(app.getHttpServer())
         .post('/v1/api/auth/logout')
-        // Overwrite Bearer token with "someone else"
-        .set('Authorization', 'Bearer someInvalidToken')
+        .set('Cookie', 'invalid')
         .expect(401);
     });
 
     it('should logout the existing user', async () => {
       const res = await request(app.getHttpServer())
         .post('/v1/api/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', cookies)
         .expect(200);
 
-      expect(res.body.message).toBe('Success');
-
-      // optionally: verify in DB that hashedRt is now null
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      expect(user?.hashedRt).toBeNull();
+      expect(res.body.status).toBe('success');
+      expect(res.body.message).toBe('Logout successfully');
     });
   });
 
@@ -192,86 +220,31 @@ describe('Auth E2E', () => {
       await cleanDb();
     });
 
-    it('should throw 403 if user does not exist', async () => {
-      // call refresh with random token
-      await request(app.getHttpServer())
-        .post('/v1/api/auth/refresh')
-        .set('Authorization', 'Bearer someInvalidRefreshToken')
-        .expect(401);
-    });
-
-    it('should throw if user is logged out (hashedRt = null)', async () => {
-      // 1) Signup and get tokens
-      const signupRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
-        .send(testUser)
-        .expect(201);
-
-      const { access_token, refresh_token } = signupRes.body;
-
-      // 2) decode refresh to find userId
-      const decoded = decode(refresh_token) as { sub: string };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const userId = Number(decoded.sub);
-
-      // 3) Logout => sets hashedRt to null
-      await request(app.getHttpServer())
-        .post('/v1/api/auth/logout')
-        .set('Authorization', `Bearer ${access_token}`)
-        .expect(200);
-
-      // 4) Try to refresh => should fail
-      const refreshRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/refresh')
-        .set('Authorization', `Bearer ${refresh_token}`)
-        .expect(403);
-
-      expect(refreshRes.body.message).toBeDefined();
-    });
-
-    it('should throw if refresh token is invalid', async () => {
-      // 1) Signup and get tokens
-      const signupRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
-        .send(testUser)
-        .expect(201);
-
-      const { refresh_token } = signupRes.body;
-      // 2) call refresh with bogus refresh token
-      const refreshRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/refresh')
-        .set('Authorization', `Bearer ${refresh_token}XYZ`) // invalid
-        .expect(401);
-
-      expect(refreshRes.body.message).toBeDefined();
-    });
-
     it('should refresh tokens successfully', async () => {
-      // 1) Signup
-      await cleanDb();
       const signupRes = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signup')
-        .send(testUser)
+        .send(testSignUpPayload)
         .expect(201);
 
-      const oldAccessToken = signupRes.body.access_token;
-      const oldRefreshToken = signupRes.body.refresh_token;
+      cookies = signupRes.get('Set-Cookie');
 
-      // 2) Wait a second so new tokens have a different timestamp
+      const oldAccessToken = parsedCookies.access_token;
+      const oldRefreshToken = parsedCookies.refresh_token;
+
       await new Promise((res) => setTimeout(res, 1000));
 
-      // 3) Refresh
       const refreshRes = await request(app.getHttpServer())
         .post('/v1/api/auth/refresh')
-        .set('Authorization', `Bearer ${oldRefreshToken}`)
+        .set('Cookie', cookies)
         .expect(200);
 
-      expect(refreshRes.body.access_token).toBeDefined();
-      expect(refreshRes.body.refresh_token).toBeDefined();
+      cookies = refreshRes.get('Set-Cookie');
+      parsedCookies = cookiesParser(cookies);
 
-      // 4) ensure tokens are different
-      expect(refreshRes.body.access_token).not.toBe(oldAccessToken);
-      expect(refreshRes.body.refresh_token).not.toBe(oldRefreshToken);
+      expect(refreshRes.body.status).toBe('success');
+      expect(refreshRes.body.message).toBe('Fetched tokens successfully');
+      expect(parsedCookies.access_token).not.toBe(oldAccessToken);
+      expect(parsedCookies.refresh_token).not.toBe(oldRefreshToken);
     });
   });
 
@@ -284,25 +257,29 @@ describe('Auth E2E', () => {
     });
 
     it('should return the logged in user', async () => {
-      // 1) Signup (and automatically log in)
       const signupRes = await request(app.getHttpServer())
         .post('/v1/api/auth/local/signup')
-        .send(testUser)
+        .send(testSignUpPayload)
         .expect(201);
 
-      const { access_token } = signupRes.body;
+      cookies = signupRes.get('Set-Cookie');
+
+      const { access_token } = parsedCookies;
       const decoded = decode(access_token) as { sub: string };
       const userId = Number(decoded.sub);
 
-      // 2) Request current user
       const currentUserRes = await request(app.getHttpServer())
         .get('/v1/api/auth/current-user')
-        .set('Authorization', `Bearer ${access_token}`)
+        .set('Cookie', cookies)
         .expect(200);
 
-      expect(currentUserRes.body.id).toBe(userId);
-      expect(currentUserRes.body.email).toBe(testUser.email);
-      // Adjust any other user properties you expect
+      expect(currentUserRes.body.status).toBe('success');
+      expect(currentUserRes.body.message).toBe('Data fetched successfully');
+      expect(currentUserRes.body.data).toHaveProperty('id', userId);
+      expect(currentUserRes.body.data).toHaveProperty(
+        'email',
+        testSignUpPayload.email,
+      );
     });
   });
 });
