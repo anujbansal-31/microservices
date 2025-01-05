@@ -13,7 +13,7 @@ export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
           // Retrieve the token from the cookies
-          return request?.cookies?.['accessToken'] || null;
+          return request?.cookies?.['access_token'] || null;
         },
       ]),
       secretOrKey: process.env.AT_SECRET,
