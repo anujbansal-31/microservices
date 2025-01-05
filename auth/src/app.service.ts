@@ -8,7 +8,13 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
+import { UserResponse } from './common/types/user.response';
 import { PrismaService } from './prisma/prisma.service';
+
+interface AuthenticationResponse {
+  tokens: Tokens;
+  user: UserResponse;
+}
 
 @Injectable()
 export class AppService {
@@ -18,7 +24,7 @@ export class AppService {
     private config: ConfigService,
   ) {}
 
-  async signupLocal(dto: SignUpDto): Promise<Tokens> {
+  async signupLocal(dto: SignUpDto): Promise<AuthenticationResponse> {
     const passwordHash = await argon.hash(dto.password);
 
     const user = await this.prisma.user
@@ -41,10 +47,11 @@ export class AppService {
     const tokens = await this.getTokens(user.id);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
-    return tokens;
+    const userData = await this.getCurrentUser(user.id);
+    return { tokens, user: userData };
   }
 
-  async signinLocal(dto: SignInDto): Promise<Tokens> {
+  async signinLocal(dto: SignInDto): Promise<AuthenticationResponse> {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
@@ -59,7 +66,8 @@ export class AppService {
     const tokens = await this.getTokens(user.id);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
-    return tokens;
+    const userData = await this.getCurrentUser(user.id);
+    return { tokens, user: userData };
   }
 
   async logout(userId: number): Promise<{ message: string }> {
@@ -74,10 +82,16 @@ export class AppService {
     return { message: 'Success' };
   }
 
-  async loggedInUser(userId: number): Promise<User> {
+  async getCurrentUser(userId: number): Promise<UserResponse> {
     return await this.prisma.user.findUnique({
       where: {
         id: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
       },
     });
   }
@@ -99,7 +113,10 @@ export class AppService {
     };
   }
 
-  async refreshTokens(userId: number, rt: string): Promise<Tokens> {
+  async refreshTokens(
+    userId: number,
+    rt: string,
+  ): Promise<AuthenticationResponse> {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId,
@@ -113,7 +130,8 @@ export class AppService {
     const tokens = await this.getTokens(user.id);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
-    return tokens;
+    const userData = await this.getCurrentUser(user.id);
+    return { tokens, user: userData };
   }
 
   async updateRtHash(userId: number, rt: string): Promise<void> {
