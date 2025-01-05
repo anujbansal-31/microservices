@@ -57,8 +57,11 @@ export class AppController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@GetCurrentUserId() userId: number): Promise<{ message: string }> {
-    return this.appService.logout(userId);
+  async logout(
+    @GetCurrentUserId() userId: number,
+  ): Promise<{ message: string }> {
+    await this.appService.logout(userId);
+    return createResponse('success', 'Logout successfully');
   }
 
   @Public()
@@ -112,12 +115,5 @@ export class AppController {
   @HttpCode(HttpStatus.OK)
   health() {
     return createResponse('success', 'Success');
-  }
-
-  @Public()
-  @Get('example')
-  getExample() {
-    const data = { exampleKey: 'exampleValue' };
-    return createResponse('success', 'Data fetched successfully', data);
   }
 }

@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -76,22 +80,32 @@ export class AppService {
     return { tokens, user: userData };
   }
 
-  async logout(userId: number): Promise<{ message: string }> {
+  async logout(userId: number): Promise<boolean> {
+    const user = await this.getCurrentUser(userId, {
+      hashedRt: {
+        not: null,
+      },
+    });
+    if (!user) {
+      throw new BadRequestException('Not Logged In');
+    }
     await this.prisma.user.update({
       where: {
-        id: userId,
+        id: user.id,
       },
       data: {
         hashedRt: null,
       },
     });
-    return { message: 'Success' };
+
+    return true;
   }
 
-  async getCurrentUser(userId: number): Promise<UserResponse> {
+  async getCurrentUser(userId: number, filters?: any): Promise<UserResponse> {
     return await this.prisma.user.findUnique({
       where: {
         id: userId,
+        ...(filters ? { ...filters } : {}),
       },
       select: selectUser,
     });
