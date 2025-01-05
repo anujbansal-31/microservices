@@ -1,4 +1,4 @@
-import { GenericResponse } from 'src/types/response.type';
+import { GenericResponse } from '../types/response.type';
 
 export function createResponse<T>(
   status: 'success' | 'error',

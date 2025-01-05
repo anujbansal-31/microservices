@@ -8,7 +8,8 @@ import {
 
 import { ValidationError } from 'class-validator';
 import { Request, Response } from 'express';
-import { createResponse } from 'src/utils/response.util';
+
+import { createResponse } from '../utils/response.util';
 
 @Catch()
 export class GlobalExceptionsFilter implements ExceptionFilter {
