@@ -12,12 +12,9 @@ import {
 
 import {
   GenericResponse,
-  Health,
   RtGuard,
-  Tokens,
   createResponse,
 } from '@microservicess/common';
-import { User } from '@prisma/client';
 import { Response } from 'express';
 
 import { AppService } from './app.service';
@@ -95,23 +92,26 @@ export class AppController {
 
   @Patch('user')
   @HttpCode(HttpStatus.OK)
-  updateUser(@Body() dto: UpdateUserDto): Promise<User> {
+  async updateUser(
+    @Body() dto: UpdateUserDto,
+  ): Promise<GenericResponse<UserResponse>> {
     const { id, ...payload } = dto;
-    return this.appService.updateUser(id, payload);
+    const user = await this.appService.updateUser(id, payload);
+    return createResponse('success', 'Updated successfully', user);
   }
 
   @Public()
   @Get()
   @HttpCode(HttpStatus.OK)
-  root(): Health {
-    return this.appService.health();
+  root() {
+    return createResponse('success', 'Success');
   }
 
   @Public()
   @Get('health')
   @HttpCode(HttpStatus.OK)
-  health(): Health {
-    return this.appService.health();
+  health() {
+    return createResponse('success', 'Success');
   }
 
   @Public()

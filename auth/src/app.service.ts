@@ -2,8 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { Health, JwtPayload, Tokens } from '@microservicess/common';
-import { User } from '@prisma/client';
+import { JwtPayload, Tokens } from '@microservicess/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 
@@ -15,6 +14,13 @@ interface AuthenticationResponse {
   tokens: Tokens;
   user: UserResponse;
 }
+
+const selectUser = {
+  id: true,
+  name: true,
+  email: true,
+  createdAt: true,
+};
 
 @Injectable()
 export class AppService {
@@ -87,16 +93,11 @@ export class AppService {
       where: {
         id: userId,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
+      select: selectUser,
     });
   }
 
-  async updateUser(userId: number, data: UpdateUserDto): Promise<User> {
+  async updateUser(userId: number, data: UpdateUserDto): Promise<UserResponse> {
     return await this.prisma.user.update({
       where: {
         id: userId,
@@ -104,13 +105,8 @@ export class AppService {
       data: {
         ...data,
       },
+      select: selectUser,
     });
-  }
-
-  health(): Health {
-    return {
-      message: 'Hello World!',
-    };
   }
 
   async refreshTokens(
