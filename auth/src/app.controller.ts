@@ -10,14 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { Health, RtGuard, Tokens } from '@microservicess/common';
 import { User } from '@prisma/client';
 import { Response } from 'express';
 
 import { AppService } from './app.service';
 import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
-import { RtGuard } from './common/guards';
-import { Health, Tokens } from './common/types';
 
 @Controller('auth')
 export class AppController {

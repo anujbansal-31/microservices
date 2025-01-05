@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
+import { AtGuard, AtStrategy, RtStrategy } from '@microservicess/common';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AtGuard } from './common/guards';
-import { AtStrategy, RtStrategy } from './common/strategies';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({

@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { faker } from '@faker-js/faker';
 import { decode } from 'jsonwebtoken';
-import * as request from 'supertest';
+import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -43,6 +43,7 @@ describe('Auth E2E', () => {
   });
 
   afterAll(async () => {
+    await cleanDb();
     await app.close();
   });
 

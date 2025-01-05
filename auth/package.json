@@ -22,7 +22,7 @@
     "gen-env": "npx gen-env-types .env -o @types/env.d.ts -e ."
   },
   "dependencies": {
-    "@microservicess/common": "^1.0.1",
+    "@microservicess/common": "^1.0.6",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.0.0",
