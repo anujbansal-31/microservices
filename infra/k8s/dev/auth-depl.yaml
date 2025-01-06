@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-depl
+  labels:
+    app: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth
+          image: anujgogroup/auth
+          ports:
+            - containerPort: 3000
+          env:
+            - name: AT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: AT_SECRET
+            - name: RT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: RT_SECRET
+            - name: DATABASE_URL
+              value: "postgresql://postgres:postgres@auth-postgres-srv:5432/auth"
+            - name: NODE_ENV
+              value: "development"
+          resources:
+            limits:
+              memory: "1024Mi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-srv
+spec:
+  selector:
+    app: auth
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: 3000

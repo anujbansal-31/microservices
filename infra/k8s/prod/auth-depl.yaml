@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: auth
-          image: anujgogroup/auth
+          image: anujgogroup/auth:prod
           ports:
             - containerPort: 3000
           env:
@@ -39,8 +39,8 @@ spec:
               memory: "1025Mi"
               cpu: "1000m"
             requests:
-              memory: "1025Mi"
-              cpu: "1000m"
+              memory: "512Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service

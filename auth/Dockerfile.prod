@@ -1,0 +1,24 @@
+FROM node:alpine
+
+WORKDIR /app
+
+# Copy package and lock files first (for caching dependencies)
+COPY package.json package-lock.json ./
+RUN npm install -g @nestjs/cli prisma
+RUN npm install
+
+# Copy Prisma schema and generate the client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Copy the rest of the application source code
+COPY . .
+
+# Build the application (requires the Prisma client to already exist)
+RUN npm run build
+
+# Expose the application port
+EXPOSE 3000
+
+# Apply migrations in production mode and start the app
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]

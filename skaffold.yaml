@@ -1,0 +1,33 @@
+apiVersion: skaffold/v4beta3
+kind: Config
+
+profiles:
+  - name: dev
+    build:
+      local:
+        push: false
+      artifacts:
+        - image: anujgogroup/auth
+          context: auth
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: "src/**/*.ts"
+                dest: .
+    manifests:
+      rawYaml:
+        - ./infra/k8s/dev/*
+
+  - name: prod
+    build:
+      local:
+        push: true
+      artifacts:
+        - image: anujgogroup/auth
+          context: auth
+          docker:
+            dockerfile: Dockerfile.prod
+    manifests:
+      rawYaml:
+        - ./infra/k8s/prod/*

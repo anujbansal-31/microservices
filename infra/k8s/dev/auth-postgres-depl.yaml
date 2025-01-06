@@ -19,7 +19,7 @@ spec:
             - containerPort: 5432
           resources:
             limits:
-              memory: "128Mi"
+              memory: "256Mi"
               cpu: "500m"
           env:
             - name: POSTGRES_USER
@@ -27,7 +27,7 @@ spec:
             - name: POSTGRES_PASSWORD
               value: postgres
             - name: POSTGRES_DB
-              value: authdb
+              value: auth
           livenessProbe:
             tcpSocket:
               port: 5432
