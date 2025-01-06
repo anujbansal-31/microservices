@@ -22,7 +22,7 @@ import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
 import { UserResponse } from './common/types/user.response';
 
-@Controller('auth')
+@Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 

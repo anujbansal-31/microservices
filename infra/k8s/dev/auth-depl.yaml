@@ -41,6 +41,15 @@ spec:
             requests:
               memory: "512Mi"
               cpu: "500m"
+          volumeMounts: # Optional volume mount for temporary logs
+            - name: auth-logs
+              mountPath: /app/logs
+          securityContext: # Correctly placed container-level security context
+            allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: false
+      volumes: # Ephemeral volume for logs
+        - name: auth-logs
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
