@@ -3,7 +3,6 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { JwtPayload, Tokens } from '@microservicess/common';
@@ -31,7 +30,6 @@ export class AppService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private config: ConfigService,
   ) {}
 
   async signupLocal(dto: SignUpDto): Promise<AuthenticationResponse> {

@@ -4,6 +4,7 @@ metadata:
   name: auth-depl
   labels:
     app: auth
+    app.kubernetes.io/instance: auth-api-service
 spec:
   replicas: 1
   selector:
@@ -13,6 +14,7 @@ spec:
     metadata:
       labels:
         app: auth
+        app.kubernetes.io/instance: auth-api-service
     spec:
       containers:
         - name: auth
@@ -34,6 +36,16 @@ spec:
               value: "postgresql://postgres:postgres@auth-postgres-srv:5432/auth"
             - name: NODE_ENV
               value: "development"
+            - name: KAFKA_BROKER
+              value: "kafka-0.kafka-srv.default.svc.cluster.local:9092"
+            - name: KAFKA_GROUP_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/instance']
+            - name: KAFKA_CLIENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           resources:
             limits:
               memory: "1024Mi"

@@ -21,10 +21,14 @@ import { AppService } from './app.service';
 import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
 import { UserResponse } from './common/types/user.response';
+import { ProducerService } from './kafka/producer.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly producerService: ProducerService,
+  ) {}
 
   @Public()
   @Post('local/signup')
@@ -114,6 +118,16 @@ export class AppController {
   @Get('health')
   @HttpCode(HttpStatus.OK)
   health() {
+    return createResponse('success', 'Success');
+  }
+
+  @Public()
+  @Get('testing')
+  @HttpCode(HttpStatus.OK)
+  async testing() {
+    await this.producerService.produce('test', {
+      value: 'Hello World',
+    });
     return createResponse('success', 'Success');
   }
 }

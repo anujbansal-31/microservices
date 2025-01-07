@@ -25,6 +25,17 @@ model User {
   @@map("users")
 }
 
+model Dlq {
+  id Int @id @default(autoincrement())
+
+  value Json
+  topic String
+
+  createdAt DateTime @default(now())
+
+  @@map("dlqs")
+}
+
 enum Status {
   ACTIVE
   INACTIVE
