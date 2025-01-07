@@ -38,7 +38,7 @@ import { TestConsumer } from './test.consumer';
     AppService,
     AtStrategy,
     RtStrategy,
-    // TestConsumer,
+    TestConsumer,
   ],
 })
 export class AppModule {}

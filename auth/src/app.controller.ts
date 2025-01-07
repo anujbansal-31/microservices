@@ -126,7 +126,7 @@ export class AppController {
   @HttpCode(HttpStatus.OK)
   async testing() {
     await this.producerService.produce('test', {
-      value: 'Hello World',
+      value: Buffer.from('ANUJ BANSAL'),
     });
     return createResponse('success', 'Success');
   }
