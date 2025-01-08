@@ -17,11 +17,11 @@ import {
 } from '@microservicess/common';
 import { Response } from 'express';
 
+import { ProducerService } from '../../common/src/events/kafka/producer.service';
 import { AppService } from './app.service';
 import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
 import { UserResponse } from './common/types/user.response';
-import { ProducerService } from './kafka/producer.service';
 
 @Controller()
 export class AppController {

@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 
 import { JwtPayload, Tokens } from '@microservicess/common';
+import { Status } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 
@@ -66,7 +67,9 @@ export class AppService {
       },
     });
 
-    if (!user) throw new ForbiddenException('Access Denied');
+    if (!user || user.status !== Status.ACTIVE) {
+      throw new ForbiddenException('Access Denied');
+    }
 
     const passwordMatches = await argon.verify(user.password, dto.password);
     if (!passwordMatches) throw new ForbiddenException('Access Denied');
@@ -130,7 +133,9 @@ export class AppService {
         id: userId,
       },
     });
-    if (!user || !user.hashedRt) throw new ForbiddenException('Access Denied');
+    if (!user || !user.hashedRt || user.status !== Status.ACTIVE) {
+      throw new ForbiddenException('Access Denied');
+    }
 
     const rtMatches = await argon.verify(user.hashedRt, rt);
     if (!rtMatches) throw new ForbiddenException('Access Denied');
