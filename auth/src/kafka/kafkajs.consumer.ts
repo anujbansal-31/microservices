@@ -42,13 +42,14 @@ export class KafkajsConsumer implements IConsumer {
 
       await this.consumer.run({
         autoCommit: false,
-        eachMessage: async ({ message, partition }) => {
+        eachMessage: async ({ topic, partition, message }) => {
           const offset = message.offset;
           this.logger.debug(
             `Received message at partition ${partition}, offset ${offset}`,
           );
 
           try {
+            // Process the message with retries
             await retry(async () => onMessage(message), {
               retries: 3,
               onRetry: (error, attempt) =>
@@ -57,6 +58,19 @@ export class KafkajsConsumer implements IConsumer {
                   error,
                 ),
             });
+
+            // Commit the offset after successful processing
+            await this.consumer.commitOffsets([
+              {
+                topic,
+                partition,
+                offset: (parseInt(offset, 10) + 1).toString(), // Commit the next offset
+              },
+            ]);
+
+            this.logger.debug(
+              `Successfully committed offset ${offset} for partition ${partition}`,
+            );
           } catch (err) {
             this.logger.error(
               `Failed to process message at partition ${partition}, offset ${offset}. Adding to DLQ.`,

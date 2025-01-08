@@ -13,7 +13,7 @@ export class TestConsumer implements OnModuleInit {
         console.log({
           value: message.value.toString(),
         });
-        throw new Error('Test error!');
+        // throw new Error('Test error!');
       },
     });
   }

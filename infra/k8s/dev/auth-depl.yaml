@@ -48,11 +48,11 @@ spec:
                   fieldPath: metadata.name
           resources:
             limits:
-              memory: "1024Mi"
-              cpu: "1000m"
+              memory: "1.5Gi"
+              cpu: "1.5"
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "1Gi"
+              cpu: "750m"
           volumeMounts: # Optional volume mount for temporary logs
             - name: auth-logs
               mountPath: /app/logs
