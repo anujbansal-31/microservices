@@ -9,8 +9,8 @@ import {
   KafkaMessage,
 } from 'kafkajs';
 
-import { sleep } from '../../../../auth/src/utils/sleep';
 import { IConsumer } from '../../types/kafka.type';
+import { sleep } from '../../utils/sleep';
 
 export class KafkajsConsumer implements IConsumer {
   private readonly kafka: Kafka;

@@ -14,8 +14,11 @@ export abstract class Consumer<T extends Event> {
   abstract onMessage(data: T['data'], message: KafkaMessage): Promise<void>;
 
   protected logger = new Logger(this.constructor.name);
+  protected consumerService: ConsumerService;
 
-  constructor(protected readonly consumerService: ConsumerService) {}
+  constructor() {
+    this.consumerService = new ConsumerService();
+  }
 
   async listen() {
     this.logger.log(`Starting listener for topic: ${this.topic}`);

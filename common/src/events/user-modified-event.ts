@@ -1,12 +1,18 @@
 import { Topics } from './topics';
 
+export enum UserStatus {
+  Active = 'ACTIVE',
+  Inactive = 'INACTIVE',
+}
+
 export interface UserModifiedEvent {
-  subject: Topics.UserModified;
+  topic: Topics.UserModified;
   data: {
     id: string;
     name: string;
-    hashedRt: number;
-    status: string;
-    updatedAt: number;
+    email: string;
+    hashedRt: string;
+    status: UserStatus;
+    updatedAt: string;
   };
 }

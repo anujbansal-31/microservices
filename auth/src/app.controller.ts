@@ -13,21 +13,22 @@ import {
 import {
   GenericResponse,
   RtGuard,
+  UserStatus,
   createResponse,
 } from '@microservicess/common';
 import { Response } from 'express';
 
-import { ProducerService } from '../../common/src/events/kafka/producer.service';
 import { AppService } from './app.service';
 import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
 import { UserResponse } from './common/types/user.response';
+import { UserModifiedProducer } from './events/user-modified.producer.service';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly producerService: ProducerService,
+    private readonly userModifiedProducer: UserModifiedProducer,
   ) {}
 
   @Public()
@@ -125,8 +126,13 @@ export class AppController {
   @Get('testing')
   @HttpCode(HttpStatus.OK)
   async testing() {
-    await this.producerService.produce('test', {
-      value: Buffer.from('ANUJ BANSAL'),
+    await this.userModifiedProducer.publish({
+      id: '112',
+      name: 'Anuj Bansal',
+      email: 'asasa@asas.com',
+      updatedAt: '1212',
+      hashedRt: 'asasas',
+      status: UserStatus.Active,
     });
     return createResponse('success', 'Success');
   }

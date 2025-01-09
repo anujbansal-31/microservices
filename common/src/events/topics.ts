@@ -1,3 +1,3 @@
 export enum Topics {
-  UserModified = 'user:modified',
+  UserModified = 'user-modified',
 }

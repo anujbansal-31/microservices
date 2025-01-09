@@ -7,9 +7,10 @@ import { AtGuard, AtStrategy, RtStrategy } from '@microservicess/common';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { KafkaModule } from './kafka/kafka.module';
+import { EventModule } from './events/event.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { TestConsumer } from './test.consumer';
+
+// import { TestConsumer } from './test.consumer';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { TestConsumer } from './test.consumer';
     }),
     JwtModule.register({}),
     PrismaModule,
-    KafkaModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [
@@ -38,7 +39,7 @@ import { TestConsumer } from './test.consumer';
     AppService,
     AtStrategy,
     RtStrategy,
-    TestConsumer,
+    // TestConsumer,
   ],
 })
 export class AppModule {}

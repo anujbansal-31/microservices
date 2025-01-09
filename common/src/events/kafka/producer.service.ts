@@ -12,8 +12,11 @@ interface Event {
 
 export abstract class Producer<T extends Event> {
   abstract topic: T['topic'];
+  protected producerService: ProducerService;
 
-  constructor(protected readonly producerService: ProducerService) {}
+  constructor() {
+    this.producerService = new ProducerService();
+  }
 
   async publish(data: T['data']): Promise<void> {
     await this.producerService.produce(this.topic, {
