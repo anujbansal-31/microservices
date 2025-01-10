@@ -4,6 +4,10 @@ metadata:
   name: ingress-service
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1 # Rewrites path to capture group for backend service
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60" # Timeout for reading responses from the backend
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60" # Timeout for sending requests to the backend
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # Disable HTTPS redirection for development
 spec:
   ingressClassName: nginx
   rules:

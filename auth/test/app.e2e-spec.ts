@@ -14,6 +14,9 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+jest.mock('../src/events/user-modified.consumer.service');
+jest.mock('../src/events/user-modified.producer.service');
+
 interface ParsedCookies {
   [key: string]: string;
 }
@@ -51,7 +54,6 @@ describe('Auth E2E', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('v1/api');
     app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
@@ -93,14 +95,14 @@ describe('Auth E2E', () => {
   // ---------------------------------------------------------------------------
   // SIGNUP
   // ---------------------------------------------------------------------------
-  describe('Signup (POST /v1/api/auth/local/signup)', () => {
+  describe('Signup (POST /local/signup)', () => {
     beforeAll(async () => {
       await cleanDb();
     });
 
     it('should signup a new user', async () => {
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload);
 
       const body = res.body;
@@ -113,12 +115,12 @@ describe('Auth E2E', () => {
 
     it('should fail on duplicate signup', async () => {
       await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload)
         .expect(201);
 
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload)
         .expect(403);
 
@@ -130,14 +132,14 @@ describe('Auth E2E', () => {
   // ---------------------------------------------------------------------------
   // SIGNIN
   // ---------------------------------------------------------------------------
-  describe('Signin (POST /v1/api/auth/local/signin)', () => {
+  describe('Signin (POST /local/signin)', () => {
     beforeAll(async () => {
       await cleanDb();
     });
 
     it('should throw 403 if user does not exist', async () => {
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signin')
+        .post('/local/signin')
         .send(testSignInPayload)
         .expect(403);
 
@@ -147,12 +149,12 @@ describe('Auth E2E', () => {
 
     it('should successfully sign in after signing up', async () => {
       await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload)
         .expect(201);
 
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signin')
+        .post('/local/signin')
         .send(testSignInPayload)
         .expect(200);
 
@@ -164,12 +166,12 @@ describe('Auth E2E', () => {
 
     it('should throw 403 if password is incorrect', async () => {
       await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload)
         .expect(201);
 
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signin')
+        .post('/local/signin')
         .send({
           email: testSignInPayload.email,
           password: testSignInPayload.password + 'extra',
@@ -184,11 +186,11 @@ describe('Auth E2E', () => {
   // ---------------------------------------------------------------------------
   // LOGOUT
   // ---------------------------------------------------------------------------
-  describe('Logout (POST /v1/api/auth/logout)', () => {
+  describe('Logout (POST /logout)', () => {
     beforeAll(async () => {
       await cleanDb();
       const signupRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload);
 
       cookies = signupRes.get('Set-Cookie');
@@ -196,14 +198,14 @@ describe('Auth E2E', () => {
 
     it('should pass if logout is called for a non-existent user', async () => {
       await request(app.getHttpServer())
-        .post('/v1/api/auth/logout')
+        .post('/logout')
         .set('Cookie', 'invalid')
         .expect(401);
     });
 
     it('should logout the existing user', async () => {
       const res = await request(app.getHttpServer())
-        .post('/v1/api/auth/logout')
+        .post('/logout')
         .set('Cookie', cookies)
         .expect(200);
 
@@ -215,14 +217,14 @@ describe('Auth E2E', () => {
   // ---------------------------------------------------------------------------
   // REFRESH TOKENS
   // ---------------------------------------------------------------------------
-  describe('Refresh (POST /v1/api/auth/refresh)', () => {
+  describe('Refresh (POST /refresh)', () => {
     beforeAll(async () => {
       await cleanDb();
     });
 
     it('should refresh tokens successfully', async () => {
       const signupRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload)
         .expect(201);
 
@@ -234,7 +236,7 @@ describe('Auth E2E', () => {
       await new Promise((res) => setTimeout(res, 1000));
 
       const refreshRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/refresh')
+        .post('/refresh')
         .set('Cookie', cookies)
         .expect(200);
 
@@ -251,14 +253,14 @@ describe('Auth E2E', () => {
   // ---------------------------------------------------------------------------
   // GET CURRENT USER
   // ---------------------------------------------------------------------------
-  describe('Get current user (GET /v1/api/auth/current-user)', () => {
+  describe('Get current user (GET /current-user)', () => {
     beforeAll(async () => {
       await cleanDb();
     });
 
     it('should return the logged in user', async () => {
       const signupRes = await request(app.getHttpServer())
-        .post('/v1/api/auth/local/signup')
+        .post('/local/signup')
         .send(testSignUpPayload)
         .expect(201);
 
@@ -269,7 +271,7 @@ describe('Auth E2E', () => {
       const userId = Number(decoded.sub);
 
       const currentUserRes = await request(app.getHttpServer())
-        .get('/v1/api/auth/current-user')
+        .get('/current-user')
         .set('Cookie', cookies)
         .expect(200);
 

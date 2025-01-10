@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: product-redis-sts
+spec:
+  serviceName: product-redis-sts
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-redis
+  template:
+    metadata:
+      labels:
+        app: product-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.0
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: product-redis-data
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: product-redis-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-redis-srv
+spec:
+  selector:
+    app: product-redis
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6379
+      targetPort: 6379

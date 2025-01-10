@@ -21,10 +21,14 @@ import { AppService } from './app.service';
 import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
 import { UserResponse } from './common/types/user.response';
+import { UserModifiedProducer } from './events/user-modified.producer.service';
 
-@Controller('auth')
+@Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly userModifiedProducer: UserModifiedProducer,
+  ) {}
 
   @Public()
   @Post('local/signup')
@@ -116,4 +120,19 @@ export class AppController {
   health() {
     return createResponse('success', 'Success');
   }
+
+  // @Public()
+  // @Get('testing')
+  // @HttpCode(HttpStatus.OK)
+  // async testing() {
+  //   await this.userModifiedProducer.publish({
+  //     id: '112',
+  //     name: 'Anuj Bansal',
+  //     email: 'asasa@asas.com',
+  //     updatedAt: '1212',
+  //     hashedRt: 'asasas',
+  //     status: 'Active',
+  //   });
+  //   return createResponse('success', 'Success');
+  // }
 }

@@ -3,15 +3,16 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { JwtPayload, Tokens } from '@microservicess/common';
+import { Status } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 
 import { SignInDto, SignUpDto, UpdateUserDto } from './common/dto';
 import { UserResponse } from './common/types/user.response';
+import { UserModifiedProducer } from './events/user-modified.producer.service';
 import { PrismaService } from './prisma/prisma.service';
 
 interface AuthenticationResponse {
@@ -31,7 +32,7 @@ export class AppService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private config: ConfigService,
+    private readonly userModifiedProducer: UserModifiedProducer,
   ) {}
 
   async signupLocal(dto: SignUpDto): Promise<AuthenticationResponse> {
@@ -58,6 +59,10 @@ export class AppService {
     await this.updateRtHash(user.id, tokens.refresh_token);
 
     const userData = await this.getCurrentUser(user.id);
+
+    // Publish the user modified event
+    this.publishUserModifiedEvent(user.id);
+
     return { tokens, user: userData };
   }
 
@@ -68,7 +73,9 @@ export class AppService {
       },
     });
 
-    if (!user) throw new ForbiddenException('Access Denied');
+    if (!user || user.status !== Status.ACTIVE) {
+      throw new ForbiddenException('Access Denied');
+    }
 
     const passwordMatches = await argon.verify(user.password, dto.password);
     if (!passwordMatches) throw new ForbiddenException('Access Denied');
@@ -77,6 +84,10 @@ export class AppService {
     await this.updateRtHash(user.id, tokens.refresh_token);
 
     const userData = await this.getCurrentUser(user.id);
+
+    // Publish the user modified event
+    this.publishUserModifiedEvent(user.id);
+
     return { tokens, user: userData };
   }
 
@@ -86,9 +97,11 @@ export class AppService {
         not: null,
       },
     });
+
     if (!user) {
       throw new BadRequestException('Not Logged In');
     }
+
     await this.prisma.user.update({
       where: {
         id: user.id,
@@ -97,6 +110,9 @@ export class AppService {
         hashedRt: null,
       },
     });
+
+    // Publish the user modified event
+    this.publishUserModifiedEvent(user.id);
 
     return true;
   }
@@ -112,7 +128,7 @@ export class AppService {
   }
 
   async updateUser(userId: number, data: UpdateUserDto): Promise<UserResponse> {
-    return await this.prisma.user.update({
+    const userResponse = await this.prisma.user.update({
       where: {
         id: userId,
       },
@@ -121,6 +137,11 @@ export class AppService {
       },
       select: selectUser,
     });
+
+    // Publish the user modified event
+    this.publishUserModifiedEvent(userResponse.id);
+
+    return userResponse;
   }
 
   async refreshTokens(
@@ -132,7 +153,9 @@ export class AppService {
         id: userId,
       },
     });
-    if (!user || !user.hashedRt) throw new ForbiddenException('Access Denied');
+    if (!user || !user.hashedRt || user.status !== Status.ACTIVE) {
+      throw new ForbiddenException('Access Denied');
+    }
 
     const rtMatches = await argon.verify(user.hashedRt, rt);
     if (!rtMatches) throw new ForbiddenException('Access Denied');
@@ -141,6 +164,10 @@ export class AppService {
     await this.updateRtHash(user.id, tokens.refresh_token);
 
     const userData = await this.getCurrentUser(user.id);
+
+    // Publish the user modified event
+    this.publishUserModifiedEvent(user.id);
+
     return { tokens, user: userData };
   }
 
@@ -176,5 +203,21 @@ export class AppService {
       access_token: at,
       refresh_token: rt,
     };
+  }
+
+  async publishUserModifiedEvent(userId: number) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+    });
+    await this.userModifiedProducer.publish({
+      id: user.id.toString(),
+      name: user.name,
+      email: user.email,
+      updatedAt: user.updatedAt.toISOString(),
+      hashedRt: user.hashedRt,
+      status: user.status,
+    });
   }
 }

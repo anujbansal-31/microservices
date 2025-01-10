@@ -1,8 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: auth-postgres-depl
+  name: auth-postgres-sts
 spec:
+  serviceName: auth-postgres-sts
   replicas: 1
   selector:
     matchLabels:
@@ -15,6 +16,7 @@ spec:
       containers:
         - name: auth-postgres
           image: postgres:14
+          imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 5432
           resources:
@@ -28,6 +30,9 @@ spec:
               value: postgres
             - name: POSTGRES_DB
               value: auth
+          volumeMounts:
+            - name: auth-postgres-data
+              mountPath: /var/lib/postgresql/data
           livenessProbe:
             tcpSocket:
               port: 5432
@@ -38,6 +43,15 @@ spec:
               port: 5432
             initialDelaySeconds: 5
             periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: auth-postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
 ---
 apiVersion: v1
 kind: Service
