@@ -1,10 +1,5 @@
 import { Topics } from './topics';
 
-export enum UserStatus {
-  Active = 'ACTIVE',
-  Inactive = 'INACTIVE',
-}
-
 export interface UserModifiedEvent {
   topic: Topics.UserModified;
   data: {
@@ -12,7 +7,7 @@ export interface UserModifiedEvent {
     name: string;
     email: string;
     hashedRt: string;
-    status: UserStatus;
+    status: string;
     updatedAt: string;
   };
 }

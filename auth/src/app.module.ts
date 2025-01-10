@@ -7,10 +7,10 @@ import { AtGuard, AtStrategy, RtStrategy } from '@microservicess/common';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CacheModule } from './cache/cache.module';
 import { EventModule } from './events/event.module';
+import { UserModifiedConsumer } from './events/user-modified.consumer.service';
 import { PrismaModule } from './prisma/prisma.module';
-
-// import { TestConsumer } from './test.consumer';
 
 @Module({
   imports: [
@@ -29,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
     JwtModule.register({}),
     PrismaModule,
     EventModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [
@@ -39,7 +40,14 @@ import { PrismaModule } from './prisma/prisma.module';
     AppService,
     AtStrategy,
     RtStrategy,
-    // TestConsumer,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private readonly userModifiedConsumer: UserModifiedConsumer) {
+    this.runConsumer();
+  }
+
+  async runConsumer() {
+    await this.userModifiedConsumer.listen();
+  }
+}

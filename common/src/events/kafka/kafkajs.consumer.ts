@@ -32,7 +32,9 @@ export class KafkajsConsumer implements IConsumer {
     );
   }
 
-  async consume(onMessage: (message: KafkaMessage) => Promise<void>) {
+  async consume(
+    onMessage: (data: unknown, message: KafkaMessage) => Promise<void>,
+  ) {
     try {
       this.logger.log(`Subscribing to topic: ${this.topic.topic}`);
       await this.consumer.subscribe(this.topic);
@@ -43,12 +45,18 @@ export class KafkajsConsumer implements IConsumer {
         eachMessage: async ({ topic, partition, message }) => {
           const offset = message.offset;
           this.logger.debug(
-            `Received message at partition ${partition}, offset ${offset}`,
+            `Received message at partition ${partition}, offset ${offset}, message: ${message.value.toString()}`,
           );
+
+          let data = message.value.toString();
+
+          try {
+            data = JSON.parse(data);
+          } catch (error) {}
 
           try {
             // Process the message with retries
-            await retry(async () => onMessage(message), {
+            await retry(async () => onMessage(data, message), {
               retries: 3,
               onRetry: (error, attempt) =>
                 this.logger.warn(

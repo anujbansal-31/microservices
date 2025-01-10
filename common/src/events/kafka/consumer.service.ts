@@ -43,7 +43,7 @@ class ConsumerService implements OnApplicationShutdown {
   }: {
     topic: ConsumerSubscribeTopic;
     config?: ConsumerConfig;
-    onMessage: (message: KafkaMessage) => Promise<void>;
+    onMessage: (data: unknown, message: KafkaMessage) => Promise<void>;
   }) {
     try {
       this.logger.log(

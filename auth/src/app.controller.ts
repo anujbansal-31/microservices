@@ -13,7 +13,6 @@ import {
 import {
   GenericResponse,
   RtGuard,
-  UserStatus,
   createResponse,
 } from '@microservicess/common';
 import { Response } from 'express';
@@ -122,18 +121,18 @@ export class AppController {
     return createResponse('success', 'Success');
   }
 
-  @Public()
-  @Get('testing')
-  @HttpCode(HttpStatus.OK)
-  async testing() {
-    await this.userModifiedProducer.publish({
-      id: '112',
-      name: 'Anuj Bansal',
-      email: 'asasa@asas.com',
-      updatedAt: '1212',
-      hashedRt: 'asasas',
-      status: UserStatus.Active,
-    });
-    return createResponse('success', 'Success');
-  }
+  // @Public()
+  // @Get('testing')
+  // @HttpCode(HttpStatus.OK)
+  // async testing() {
+  //   await this.userModifiedProducer.publish({
+  //     id: '112',
+  //     name: 'Anuj Bansal',
+  //     email: 'asasa@asas.com',
+  //     updatedAt: '1212',
+  //     hashedRt: 'asasas',
+  //     status: 'Active',
+  //   });
+  //   return createResponse('success', 'Success');
+  // }
 }
