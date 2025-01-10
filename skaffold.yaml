@@ -15,6 +15,14 @@ profiles:
             manual:
               - src: "src/**/*.ts"
                 dest: .
+        - image: anujgogroup/products
+          context: products
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: "src/**/*.ts"
+                dest: .
     manifests:
       rawYaml:
         - ./infra/k8s/dev/*

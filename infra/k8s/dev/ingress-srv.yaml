@@ -21,3 +21,10 @@ spec:
                 name: auth-srv
                 port:
                   number: 3000
+          - path: /v1/api/products/?(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: products-srv
+                port:
+                  number: 3000

@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-depl
+  name: products-depl
   labels:
-    app: auth
-    app.kubernetes.io/instance: auth-api-service
+    app: products
+    app.kubernetes.io/instance: products-api-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth
+      app: products
   template:
     metadata:
       labels:
-        app: auth
-        app.kubernetes.io/instance: auth-api-service
+        app: products
+        app.kubernetes.io/instance: products-api-service
     spec:
       containers:
-        - name: auth
-          image: anujgogroup/auth
+        - name: products
+          image: anujgogroup/products
           ports:
             - containerPort: 3000
           env:
@@ -33,7 +33,7 @@ spec:
                   name: jwt-secret
                   key: RT_SECRET
             - name: DATABASE_URL
-              value: "postgresql://postgres:postgres@auth-postgres-srv:5432/auth"
+              value: "postgresql://postgres:postgres@products-postgres-srv:5432/products"
             - name: NODE_ENV
               value: "development"
             - name: KAFKA_BROKER
@@ -58,22 +58,22 @@ spec:
               memory: "1Gi"
               cpu: "750m"
           volumeMounts: # Optional volume mount for temporary logs
-            - name: auth-logs
+            - name: products-logs
               mountPath: /app/logs
           securityContext: # Correctly placed container-level security context
             allowPrivilegeEscalation: true
             readOnlyRootFilesystem: false
       volumes: # Ephemeral volume for logs
-        - name: auth-logs
+        - name: products-logs
           emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-srv
+  name: products-srv
 spec:
   selector:
-    app: auth
+    app: products
   ports:
     - name: http
       protocol: TCP

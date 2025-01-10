@@ -1,0 +1,12 @@
+FROM node:alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm install -g @nestjs/cli prisma
+RUN npm install --omit=dev
+
+COPY . .
+
+EXPOSE 3000
+CMD ["sh", "-c", "npm run start:dev"]
