@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-import { Consumer, Topics, UserModifiedEvent } from '@microservicess/common';
+import {
+  CacheService,
+  Consumer,
+  SEVEN_DAYS,
+  Topics,
+  UserModifiedEvent,
+} from '@microservicess/common';
 import { KafkaMessage } from 'kafkajs';
-import { SEVEN_DAYS } from 'src/common/constants';
-
-import { CacheService } from './../cache/cache.service';
 
 @Injectable()
 export class UserModifiedConsumer extends Consumer<UserModifiedEvent> {

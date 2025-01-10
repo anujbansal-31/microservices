@@ -3,11 +3,15 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
-import { AtGuard, AtStrategy, RtStrategy } from '@microservicess/common';
+import {
+  AtGuard,
+  AtStrategy,
+  CacheModule,
+  RtStrategy,
+} from '@microservicess/common';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CacheModule } from './cache/cache.module';
 import { EventModule } from './events/event.module';
 import { UserModifiedConsumer } from './events/user-modified.consumer.service';
 import { PrismaModule } from './prisma/prisma.module';

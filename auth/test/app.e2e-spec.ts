@@ -14,6 +14,9 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+jest.mock('../src/events/user-modified.consumer.service');
+jest.mock('../src/events/user-modified.producer.service');
+
 interface ParsedCookies {
   [key: string]: string;
 }
