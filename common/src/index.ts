@@ -23,3 +23,7 @@ export * from './events/user-modified-event';
 
 export * from './cache/cache.module';
 export * from './cache/cache.service';
+
+export * from './decorators/get-current-user-id.decorator';
+export * from './decorators/get-current-user.decorator';
+export * from './decorators/public.decorator';

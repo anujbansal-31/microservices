@@ -33,7 +33,7 @@ spec:
                   name: jwt-secret
                   key: RT_SECRET
             - name: DATABASE_URL
-              value: "postgresql://postgres:postgres@products-postgres-srv:5432/products"
+              value: "mongodb://root:rootpassword@products-mongodb-srv:27017/products?authSource=admin"
             - name: NODE_ENV
               value: "development"
             - name: KAFKA_BROKER

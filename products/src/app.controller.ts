@@ -12,6 +12,7 @@ import {
 
 import {
   GenericResponse,
+  Public,
   RtGuard,
   createResponse,
 } from '@microservicess/common';
@@ -23,14 +24,14 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  // @Public()
+  @Public()
   @Get()
   @HttpCode(HttpStatus.OK)
   root() {
     return createResponse('success', 'Success');
   }
 
-  // @Public()
+  @Public()
   @Get('health')
   @HttpCode(HttpStatus.OK)
   health() {

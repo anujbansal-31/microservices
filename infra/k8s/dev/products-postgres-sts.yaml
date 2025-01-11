@@ -1,51 +1,51 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: products-postgres-sts
+  name: products-mongodb-sts
 spec:
-  serviceName: products-postgres-sts
+  serviceName: products-mongodb-sts
   replicas: 1
   selector:
     matchLabels:
-      app: products-postgres
+      app: products-mongodb
   template:
     metadata:
       labels:
-        app: products-postgres
+        app: products-mongodb
     spec:
       containers:
-        - name: products-postgres
-          image: postgres:14
-          imagePullPolicy: "IfNotPresent"
+        - name: products-mongodb
+          image: mongo:6.0
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 5432
+            - containerPort: 27017
           resources:
             limits:
               memory: "256Mi"
               cpu: "500m"
           env:
-            - name: POSTGRES_USER
-              value: postgres
-            - name: POSTGRES_PASSWORD
-              value: postgres
-            - name: POSTGRES_DB
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: root
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: rootpassword
+            - name: MONGO_INITDB_DATABASE
               value: products
           volumeMounts:
-            - name: products-postgres-data
-              mountPath: /var/lib/postgresql/data
+            - name: products-mongodb-data
+              mountPath: /data/db
           livenessProbe:
             tcpSocket:
-              port: 5432
+              port: 27017
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             tcpSocket:
-              port: 5432
+              port: 27017
             initialDelaySeconds: 5
             periodSeconds: 10
   volumeClaimTemplates:
     - metadata:
-        name: products-postgres-data
+        name: products-mongodb-data
       spec:
         accessModes:
           - ReadWriteOnce
@@ -56,12 +56,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: products-postgres-srv
+  name: products-mongodb-srv
 spec:
   selector:
-    app: products-postgres
+    app: products-mongodb
   ports:
     - name: db
       protocol: TCP
-      port: 5432
-      targetPort: 5432
+      port: 27017
+      targetPort: 27017
