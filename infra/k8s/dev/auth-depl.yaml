@@ -46,10 +46,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: REDIS_HOST
-              value: "products-redis-srv.default.svc.cluster.local"
-            - name: REDIS_PORT
-              value: "6379"
           resources:
             limits:
               memory: "1.5Gi"
