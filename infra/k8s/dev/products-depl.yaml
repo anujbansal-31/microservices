@@ -33,7 +33,7 @@ spec:
                   name: jwt-secret
                   key: RT_SECRET
             - name: DATABASE_URL
-              value: "mongodb://root:rootpassword@products-mongodb-srv:27017/products?authSource=admin"
+              value: "mongodb://products-mongodb-srv:27017/products?replicaSet=rs0"
             - name: NODE_ENV
               value: "development"
             - name: KAFKA_BROKER

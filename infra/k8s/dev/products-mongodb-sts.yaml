@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: products-mongodb-sts
+  namespace: default
+spec:
+  replicas: 1
+  serviceName: products-mongodb-srv
+  selector:
+    matchLabels:
+      app: products-mongodb
+  template:
+    metadata:
+      labels:
+        app: products-mongodb
+    spec:
+      securityContext:
+        fsGroup: 1000 # Ensures /data/db is writable by the container
+      containers:
+        - name: products-mongodb
+          image: mongo:6.0.11
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 27017
+          # Run in replica set mode (no auth)
+          args: ["--replSet", "rs0"]
+          volumeMounts:
+            - name: products-mongodb-data
+              mountPath: /data/db
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+  volumeClaimTemplates:
+    - metadata:
+        name: products-mongodb-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: products-mongodb-init-rs
+  namespace: default
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: products-mongodb-init
+          image: mongo:6.0.11
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "Waiting for MongoDB to be ready (no-auth)..."
+
+              # Retry loop: check if MongoDB is fully initialized and responding
+              for i in {1..12}; do
+                if mongosh --host products-mongodb-sts-0.products-mongodb-srv.default.svc.cluster.local:27017 \
+                           --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+                  echo "MongoDB is ready!"
+                  break
+                fi
+                echo "MongoDB not ready, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              # Ensure the 'admin' database exists before creating a user
+              echo "Creating root user..."
+              mongosh --host products-mongodb-sts-0.products-mongodb-srv.default.svc.cluster.local:27017 --eval '
+                db = db.getSiblingDB("admin");
+                if (!db.system.users.findOne({ user: "root" })) {
+                  print("Creating root user...");
+                  db.createUser({
+                    user: "root",
+                    pwd: "rootpassword",
+                    roles: [ { role: "root", db: "admin" } ]
+                  });
+                  print("Root user created.");
+                } else {
+                  print("Root user already exists. Skipping creation.");
+                }
+              '
+
+              echo "Initializing single-node replica set..."
+              mongosh --host products-mongodb-sts-0.products-mongodb-srv.default.svc.cluster.local:27017 --eval '
+                rs.initiate({
+                  _id: "rs0",
+                  members: [
+                    { _id: 0, host: "products-mongodb-sts-0.products-mongodb-srv.default.svc.cluster.local:27017" }
+                  ]
+                });
+              '
+              echo "Replica set initialized successfully."
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-mongodb-srv
+  namespace: default
+  annotations:
+    field.cattle.io/description: "MongoDB Cluster IP"
+spec:
+  ports:
+    - name: db
+      protocol: TCP
+      port: 27017
+      targetPort: 27017
+  selector:
+    app: products-mongodb
+  type: ClusterIP
