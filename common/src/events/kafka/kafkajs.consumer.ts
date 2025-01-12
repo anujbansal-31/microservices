@@ -10,7 +10,7 @@ import {
 } from 'kafkajs';
 
 import { IConsumer } from '../../types/kafka.type';
-import { sleep } from '../../utils/sleep';
+import { sleep } from '../../utils/sleep.util';
 
 export class KafkajsConsumer implements IConsumer {
   private readonly kafka: Kafka;

@@ -1,28 +1,55 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
-  Res,
-  UseGuards,
 } from '@nestjs/common';
 
 import {
-  GenericResponse,
+  GetCurrentUserId,
   Public,
-  RtGuard,
   createResponse,
 } from '@microservicess/common';
-import { Response } from 'express';
 
 import { AppService } from './app.service';
+import { CreateProductDto, UpdateProductDto } from './common/dto';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async createProduct(
+    @Body() dto: CreateProductDto,
+    @GetCurrentUserId() userId: number,
+  ) {
+    const product = await this.appService.createProduct(dto, userId);
+    return createResponse('success', 'Product created successfully', product);
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  async updateProduct(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductDto,
+    @GetCurrentUserId() userId: number,
+  ) {
+    const product = await this.appService.updateProduct(id, dto, userId);
+    return createResponse('success', 'Product updated successfully', product);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async deleteProduct(@Param('id') id: string) {
+    const result = await this.appService.deleteProduct(id);
+    return createResponse('success', 'Product deleted successfully', result);
+  }
 
   @Public()
   @Get()
@@ -37,19 +64,4 @@ export class AppController {
   health() {
     return createResponse('success', 'Success');
   }
-
-  // @Public()
-  // @Get('testing')
-  // @HttpCode(HttpStatus.OK)
-  // async testing() {
-  //   await this.userModifiedProducer.publish({
-  //     id: '112',
-  //     name: 'Anuj Bansal',
-  //     email: 'asasa@asas.com',
-  //     updatedAt: '1212',
-  //     hashedRt: 'asasas',
-  //     status: 'Active',
-  //   });
-  //   return createResponse('success', 'Success');
-  // }
 }

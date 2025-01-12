@@ -20,7 +20,8 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "typeRoots": ["./node_modules/@types", "src/@types"],
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "preserveWatchOutput": true
   },
   "watchOptions": {
     "watchFile": "fixedPollingInterval"

@@ -15,11 +15,10 @@ export class UserModifiedConsumer extends Consumer<UserModifiedEvent> {
 
   async onMessage(data: UserModifiedEvent['data'], message: KafkaMessage) {
     console.log('Dataa:', data);
-    const allUsers = await this.prisma.users.findMany();
-    console.log('USERS:', allUsers);
+
     await this.prisma.users.create({
       data: {
-        userId: parseInt(data.id),
+        referenceId: parseInt(data.id),
         name: data.name,
         email: data.email,
         hashedRt: data.hashedRt,
@@ -27,5 +26,8 @@ export class UserModifiedConsumer extends Consumer<UserModifiedEvent> {
         updatedAt: data.updatedAt,
       },
     });
+
+    const allUsers = await this.prisma.users.findMany();
+    console.log('USERS:', allUsers);
   }
 }

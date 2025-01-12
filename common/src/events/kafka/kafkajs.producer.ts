@@ -4,7 +4,7 @@ import retry from 'async-retry';
 import { Kafka, Message, Producer } from 'kafkajs';
 
 import { IProducer } from '../../types/kafka.type';
-import { sleep } from '../../utils/sleep';
+import { sleep } from '../../utils/sleep.util';
 
 export class KafkajsProducer implements IProducer {
   private readonly kafka: Kafka;
