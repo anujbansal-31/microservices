@@ -30,7 +30,7 @@ export class PrismaService
   async cleanDatabase() {
     if (process.env.NODE_ENV === 'production') return;
 
-    // Example: remove all documents from the "users" collection
-    // await this.user.deleteMany();
+    await this.products.deleteMany();
+    await this.users.deleteMany();
   }
 }

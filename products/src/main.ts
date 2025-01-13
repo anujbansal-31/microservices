@@ -15,6 +15,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       exceptionFactory: (errors) => {
+        console.log('Global errors:', errors);
         // Forward class-validator errors as an array to the filter
         return new BadRequestException(errors);
       },

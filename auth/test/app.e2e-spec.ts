@@ -69,6 +69,7 @@ describe('Auth E2E', () => {
     await app.init();
 
     prisma = moduleRef.get(PrismaService);
+    await cleanDb();
   });
 
   afterAll(async () => {

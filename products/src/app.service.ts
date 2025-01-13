@@ -8,8 +8,28 @@ import {
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { CreateProductDto, UpdateProductDto } from './common/dto';
+import { ProductResponse } from './common/types/product.response';
 import { PrismaService } from './prisma/prisma.service';
 import { SlugUtils } from './utils/slug.utils';
+
+const selectProduct = {
+  id: true,
+  slug: true,
+  title: true,
+  description: true,
+  inStock: true,
+  price: true,
+  sold: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const selectUser = {
+  id: true,
+  name: true,
+  email: true,
+  status: true,
+};
 
 @Injectable()
 export class AppService {
@@ -19,7 +39,10 @@ export class AppService {
     this.slugUtils = new SlugUtils(this.prisma);
   }
 
-  async createProduct(dto: CreateProductDto, userId: number) {
+  async createProduct(
+    dto: CreateProductDto,
+    userId: number,
+  ): Promise<ProductResponse> {
     try {
       const slug = await this.slugUtils.generateUniqueSlug(dto.title);
 
@@ -40,9 +63,18 @@ export class AppService {
           sold: false,
           userId: user.id,
         },
+        select: {
+          ...selectProduct,
+          user: {
+            select: selectUser,
+          },
+        },
       });
       return newProduct;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException(`Product already exists.`);
@@ -51,7 +83,11 @@ export class AppService {
     }
   }
 
-  async updateProduct(id: string, dto: UpdateProductDto, userId: number) {
+  async updateProduct(
+    id: string,
+    dto: UpdateProductDto,
+    userId: number,
+  ): Promise<ProductResponse> {
     try {
       const user = await this.prisma.users.findUnique({
         where: {
@@ -72,7 +108,7 @@ export class AppService {
       }
 
       let slug: string;
-      if (dto?.title?.length) {
+      if (dto?.title?.length && product.title !== dto.title) {
         slug = await this.slugUtils.generateUniqueSlug(dto.title);
       }
 
@@ -82,9 +118,18 @@ export class AppService {
           ...dto,
           slug,
         },
+        select: {
+          ...selectProduct,
+          user: {
+            select: selectUser,
+          },
+        },
       });
       return updatedProduct;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException(`Product already exists.`);
@@ -97,12 +142,11 @@ export class AppService {
     }
   }
 
-  async deleteProduct(id: string) {
+  async deleteProduct(id: string): Promise<void> {
     try {
       await this.prisma.products.delete({
         where: { id },
       });
-      return { message: 'Product deleted successfully' };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -116,13 +160,26 @@ export class AppService {
     }
   }
 
-  async getAllProducts() {
-    return this.prisma.products.findMany();
+  async getAllProducts(): Promise<ProductResponse[]> {
+    return this.prisma.products.findMany({
+      select: {
+        ...selectProduct,
+        user: {
+          select: selectUser,
+        },
+      },
+    });
   }
 
-  async getProductById(id: string) {
+  async getProductById(id: string): Promise<ProductResponse> {
     const product = await this.prisma.products.findUnique({
       where: { id },
+      select: {
+        ...selectProduct,
+        user: {
+          select: selectUser,
+        },
+      },
     });
     if (!product) {
       throw new NotFoundException(`Product not found`);
