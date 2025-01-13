@@ -7,6 +7,7 @@ import { AtGuard, AtStrategy, RtStrategy } from '@microservicess/common';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthGuard } from './common/guards/auth.guard';
 import { EventModule } from './events/event.module';
 import { UserModifiedConsumer } from './events/user-modified.consumer.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -31,6 +32,10 @@ import { PrismaModule } from './prisma/prisma.module';
   ],
   controllers: [AppController],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: AtGuard,
