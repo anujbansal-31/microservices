@@ -11,12 +11,10 @@ export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          // Retrieve the token from the cookies
-          return request?.cookies?.['access_token'] || null;
-        },
+        (request: Request) => request?.cookies?.['access_token'] || null,
       ]),
       secretOrKey: process.env.AT_SECRET,
+      ignoreExpiration: false,
     });
   }
 

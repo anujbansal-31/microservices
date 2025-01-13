@@ -12,23 +12,18 @@ export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          // Retrieve the refresh token from cookies
-          return request?.cookies?.['refresh_token'] || null;
-        },
+        (request: Request) => request?.cookies?.['refresh_token'] || null,
       ]),
-      secretOrKey: process.env.RT_SECRET, // Use ConfigService for the secret
-      passReqToCallback: true, // Pass the request object to the validate method
+      secretOrKey: process.env.RT_SECRET,
+      passReqToCallback: true,
     });
   }
 
   validate(req: Request, payload: JwtPayload): JwtPayloadWithRt {
-    const refreshToken = req.cookies?.['refresh_token']; // Extract the refresh token from cookies
-
+    const refreshToken = req?.cookies?.['refresh_token'];
     if (!refreshToken) {
-      throw new ForbiddenException('Refresh token malformed or missing');
+      throw new ForbiddenException('Refresh token missing');
     }
-
     return {
       ...payload,
       refreshToken,

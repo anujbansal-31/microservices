@@ -80,6 +80,9 @@ export class AppService {
           throw new ConflictException(`Product already exists.`);
         }
       }
+      throw new BadRequestException(
+        `Failed to update product: ${error.message}`,
+      );
     }
   }
 
